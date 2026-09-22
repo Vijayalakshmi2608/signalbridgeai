@@ -1,9 +1,10 @@
 import * as React from "react";
 import { ReactNode, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Bell, BookOpen, ClipboardCheck, CloudRain, FileCheck2, Gauge, Globe2, MapPinned, Menu, RadioTower, Settings, ShieldCheck, Users, Wifi, WifiOff, X } from "lucide-react";
+import { Bell, ClipboardCheck, CloudRain, FileCheck2, Gauge, MapPinned, Menu, RadioTower, Settings, ShieldCheck, Users, Wifi, WifiOff, X } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { GeoPoint, IMPORTANT_ROADS, SAFE_REFERENCE_AREAS, SHELTERS, WARNING_ZONES } from "@shared/geoshield";
 
 const navGroups = [
   { label: "Command", items: [{ href: "/dashboard", label: "Emergency dashboard", icon: Gauge }, { href: "/alerts", label: "Alert center", icon: Bell }, { href: "/risk-map", label: "Risk map", icon: MapPinned }] },
@@ -40,23 +41,35 @@ export function SectionTitle({ eyebrow, title, action }: { eyebrow?: string; tit
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) { return <section className={`rounded-xl border border-[#d8e1e8] bg-white shadow-[0_8px_24px_rgba(37,62,76,.045)] ${className}`}>{children}</section>; }
 export function ProgressBar({ value, color = "#38b8bd" }: { value: number; color?: string }) { return <div className="h-2 overflow-hidden rounded-full bg-[#e7eef1]"><div className="h-full rounded-full transition-all duration-300" style={{ width: `${value}%`, background: color }} /></div>; }
 
-export function SignalMap({ compact = false }: { compact?: boolean }) {
+export function SignalMap({ compact = false, selectedPoint, onSelectPoint }: { compact?: boolean; selectedPoint?: GeoPoint; onSelectPoint?: (point: GeoPoint) => void }) {
   const mapRef = useRef<HTMLDivElement | null>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const selectedMarkerRef = useRef<L.CircleMarker | null>(null);
+  const onSelectPointRef = useRef(onSelectPoint);
+  onSelectPointRef.current = onSelectPoint;
+
   useEffect(() => {
     if (!mapRef.current) return;
-    const map = L.map(mapRef.current, { zoomControl: false, attributionControl: true }).setView([13.105, 80.235], compact ? 11.6 : 12.5);
+    const map = L.map(mapRef.current, { zoomControl: false, attributionControl: true, minZoom: 11, maxZoom: 16 }).setView([13.105, 80.235], compact ? 11.6 : 12.5);
+    mapInstanceRef.current = map;
     L.control.zoom({ position: "bottomright" }).addTo(map);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: "© OpenStreetMap contributors" }).addTo(map);
-    const zones = [
-      { lat: 13.117, lng: 80.242, label: "Perambur", color: "#c75252", radius: 950 },
-      { lat: 13.092, lng: 80.255, label: "Ayanavaram", color: "#dd9c30", radius: 680 },
-      { lat: 13.068, lng: 80.245, label: "Purasawalkam", color: "#dd9c30", radius: 540 },
-      { lat: 13.055, lng: 80.28, label: "Egmore", color: "#2e8b70", radius: 440 },
-    ];
-    zones.forEach(zone => { L.circle([zone.lat, zone.lng], { radius: zone.radius, color: zone.color, fillColor: zone.color, fillOpacity: .16, weight: 2 }).addTo(map).bindTooltip(zone.label, { direction: "top", opacity: .9 }); L.circleMarker([zone.lat, zone.lng], { radius: 7, color: "#fff", weight: 2, fillColor: zone.color, fillOpacity: 1 }).addTo(map); });
-    const route = [[13.115, 80.21], [13.102, 80.23], [13.082, 80.252], [13.06, 80.27]] as [number, number][];
-    L.polyline(route, { color: "#2e8b91", weight: 3, dashArray: "7 7", opacity: .9 }).addTo(map);
-    return () => { map.remove(); };
+    WARNING_ZONES.forEach(zone => {
+      const polygon = zone.points.map(point => [point.lat, point.lng] as [number, number]);
+      L.polygon(polygon, { color: zone.severity === "action" ? "#c75252" : "#dd9c30", fillColor: zone.severity === "action" ? "#c75252" : "#dd9c30", fillOpacity: .18, weight: 2 }).addTo(map).bindTooltip(`${zone.name} · ${zone.severity.toUpperCase()}`, { direction: "top", opacity: .95 });
+    });
+    IMPORTANT_ROADS.forEach(road => L.polyline(road.points.map(point => [point.lat, point.lng] as [number, number]), { color: road.id === "road-2" ? "#c75252" : "#2e8b91", weight: road.id === "road-2" ? 4 : 3, dashArray: road.id === "road-2" ? "3 6" : "8 8", opacity: .9 }).addTo(map).bindTooltip(`${road.name} · ${road.status}`, { direction: "top" }));
+    SHELTERS.forEach(shelter => L.circleMarker([shelter.point.lat, shelter.point.lng], { radius: 6, color: "#fff", weight: 2, fillColor: "#2e8b70", fillOpacity: 1 }).addTo(map).bindTooltip(`${shelter.name} · ${shelter.status}`, { direction: "top" }));
+    SAFE_REFERENCE_AREAS.forEach(area => L.circleMarker([area.point.lat, area.point.lng], { radius: 5, color: "#fff", weight: 2, fillColor: "#5c6d79", fillOpacity: 1 }).addTo(map).bindTooltip(`${area.name} · reference only`, { direction: "top" }));
+    map.on("click", event => onSelectPointRef.current?.({ lat: Number(event.latlng.lat.toFixed(5)), lng: Number(event.latlng.lng.toFixed(5)) }));
+    return () => { map.remove(); mapInstanceRef.current = null; selectedMarkerRef.current = null; };
   }, [compact]);
-  return <div className={`relative overflow-hidden rounded-xl border border-[#cbd9df] bg-[#dfeaec] ${compact ? "h-[230px]" : "h-[480px]"}`}><div ref={mapRef} className="h-full w-full" /><div className="pointer-events-none absolute left-3 top-3 rounded-lg border border-white/70 bg-white/90 px-3 py-2 shadow-sm"><div className="font-mono text-[9px] font-semibold uppercase tracking-[.14em] text-[#27445b]">OpenStreetMap · live layer</div><div className="mt-1 text-[11px] text-[#71818b]">Risk overlays are simulated</div></div></div>;
+
+  useEffect(() => {
+    if (!mapInstanceRef.current || !selectedPoint) return;
+    selectedMarkerRef.current?.remove();
+    selectedMarkerRef.current = L.circleMarker([selectedPoint.lat, selectedPoint.lng], { radius: 9, color: "#0d3448", weight: 3, fillColor: "#7ee2de", fillOpacity: 1 }).addTo(mapInstanceRef.current).bindTooltip("Selected user location", { direction: "top", permanent: false });
+  }, [selectedPoint]);
+
+  return <div className={`relative overflow-hidden rounded-xl border border-[#cbd9df] bg-[#dfeaec] ${compact ? "h-[230px]" : "h-[480px]"}`}><div ref={mapRef} className="h-full w-full cursor-crosshair" /><div className="pointer-events-none absolute left-3 top-3 rounded-lg border border-white/70 bg-white/95 px-3 py-2 shadow-sm"><div className="font-mono text-[9px] font-semibold uppercase tracking-[.14em] text-[#27445b]">OpenStreetMap · GeoShield</div><div className="mt-1 text-[11px] text-[#71818b]">Click anywhere to assess this location</div></div></div>;
 }

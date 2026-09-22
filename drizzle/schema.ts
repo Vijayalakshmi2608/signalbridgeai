@@ -24,13 +24,18 @@ export const warningSources = mysqlTable("warning_sources", {
 
 export const warnings = mysqlTable("warnings", {
   id: int("id").autoincrement().primaryKey(),
+  alertId: varchar("alertId", { length: 120 }).notNull(),
   title: varchar("title", { length: 220 }).notNull(),
   hazardType: varchar("hazardType", { length: 80 }).notNull(),
   severity: mysqlEnum("severity", ["advisory", "watch", "warning", "critical"]).notNull(),
   status: mysqlEnum("status", ["active", "monitoring", "expired"]).default("active").notNull(),
+  sourceStatus: mysqlEnum("sourceStatus", ["official", "connected", "simulated"]).default("simulated").notNull(),
   area: varchar("area", { length: 180 }).notNull(),
   summary: text("summary").notNull(),
+  warningText: text("warningText").notNull(),
+  recommendedPrecautions: text("recommendedPrecautions").notNull(),
   issuedAt: timestamp("issuedAt").notNull(),
+  validFrom: timestamp("validFrom").notNull(),
   validUntil: timestamp("validUntil"),
   sourceLabel: varchar("sourceLabel", { length: 180 }).notNull(),
 });
