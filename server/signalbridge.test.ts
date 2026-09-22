@@ -7,6 +7,8 @@ import { buildEvidenceGraph, compileActionPlan } from "./actionforge";
 import { fetchOfficialWarnings, liveIntegrationStatus } from "./liveSources";
 import { buildIncidentClusters, DEMO_CROWD_REPORTS, getCrowdPulseBundle, semanticSimilarity } from "./crowdpulse";
 import { buildAccessBridgeBundle, transformActionPlan } from "./accessbridge";
+import { getSafeLoopState, updateSafeLoopStatus } from "./safeloop";
+import { getResilienceVaultBundle } from "./resiliencevault";
 import type { TrpcContext } from "./_core/context";
 
 function createPublicContext(): TrpcContext {
@@ -169,5 +171,47 @@ describe("AccessBridge", () => {
     expect(bundle.supportedLanguages).toEqual(["English", "Tamil", "Simplified English"]);
     expect(bundle.voice.provider).toBe("Browser SpeechSynthesis");
     expect(bundle.disclaimer).toContain("does not create new emergency instructions");
+  });
+});
+
+describe("SafeLoop", () => {
+  it("stores a selected status with a timestamp and appends the user response timeline event", () => {
+    const before = getSafeLoopState();
+    const updated = updateSafeLoopStatus("PREPARING");
+    expect(updated.currentStatus).toBe("PREPARING");
+    expect(updated.updatedAt.getTime()).toBeGreaterThanOrEqual(before.updatedAt.getTime());
+    expect(updated.timeline.some(event => event.type === "USER RESPONSE" && event.status === "PREPARING")).toBe(true);
+    expect(updated.timeline.some(event => event.type === "SAFETY STATUS" && event.status === "PREPARING")).toBe(true);
+    expect(updated.disclaimer).toContain("does not automatically dispatch responders");
+  });
+
+  it("exposes the closed-loop status through tRPC", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const updated = await caller.signalbridge.updateSafeLoop({ status: "EVACUATING" });
+    const state = await caller.signalbridge.safeLoop();
+    expect(updated.currentStatus).toBe("EVACUATING");
+    expect(state.timeline.map(event => event.type)).toEqual(expect.arrayContaining(["WARNING RECEIVED", "ACTION PLAN GENERATED", "USER RESPONSE", "SAFETY STATUS"]));
+  });
+});
+
+describe("ResilienceVault", () => {
+  it("contains the last verified warning, essential instructions, Tamil cards, contacts, shelters, and map context", async () => {
+    const vault = await getResilienceVaultBundle();
+    expect(vault.lastSynchronizedAt).toBeInstanceOf(Date);
+    expect(vault.syncStatus).toContain("LAST SYNC");
+    expect(vault.warning.sourceStatus).toBe("simulated");
+    expect(vault.essentialInstructions.length).toBe(4);
+    expect(vault.tamilActionCards.length).toBe(4);
+    expect(vault.emergencyContacts.some(contact => contact.number === "112")).toBe(true);
+    expect(vault.shelters.length).toBeGreaterThan(0);
+    expect(vault.mapInformation.warningZones.length).toBeGreaterThan(0);
+    expect(vault.disclaimer).toContain("Cached content is not live");
+  });
+
+  it("exposes the cached bundle through tRPC without presenting it as live", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const vault = await caller.signalbridge.resilienceVault();
+    expect(vault.warning.sourceStatus).toBe("simulated");
+    expect(vault.mapInformation.disclaimer).toContain("cached demonstration geometry");
   });
 });

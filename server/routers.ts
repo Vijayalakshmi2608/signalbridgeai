@@ -9,6 +9,8 @@ import { buildEvidenceGraph, compileActionPlan } from "./actionforge";
 import { fetchOfficialWarnings, geocodeLocation, liveIntegrationStatus, routeDistance, shelterAvailability } from "./liveSources";
 import { getCrowdPulseBundle } from "./crowdpulse";
 import { buildAccessBridgeBundle } from "./accessbridge";
+import { SAFE_LOOP_STATUSES, getSafeLoopState, updateSafeLoopStatus } from "./safeloop";
+import { getResilienceVaultBundle } from "./resiliencevault";
 import { z } from "zod";
 
 const pointSchema = z.object({ lat: z.number(), lng: z.number() });
@@ -55,6 +57,9 @@ export const appRouter = router({
     shelterAvailability: publicProcedure.input(z.object({ name: z.string(), capacity: z.number(), availableSpaces: z.number(), status: z.string() })).query(({ input }) => shelterAvailability(input)),
     crowdPulse: publicProcedure.query(() => getCrowdPulseBundle()),
     accessBridge: publicProcedure.query(() => getActionForgeBundle().then(bundle => buildAccessBridgeBundle(bundle.recommendations))),
+    safeLoop: publicProcedure.query(() => getSafeLoopState()),
+    updateSafeLoop: publicProcedure.input(z.object({ status: z.enum(SAFE_LOOP_STATUSES) })).mutation(({ input }) => updateSafeLoopStatus(input.status)),
+    resilienceVault: publicProcedure.query(() => getResilienceVaultBundle()),
   }),
 });
 
