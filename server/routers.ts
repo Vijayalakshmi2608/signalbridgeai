@@ -7,6 +7,8 @@ import { assessRisk } from "./geoshield";
 import { DEMO_RAW_ALERT, interpretAlert } from "./signalcore";
 import { buildEvidenceGraph, compileActionPlan } from "./actionforge";
 import { fetchOfficialWarnings, geocodeLocation, liveIntegrationStatus, routeDistance, shelterAvailability } from "./liveSources";
+import { getCrowdPulseBundle } from "./crowdpulse";
+import { buildAccessBridgeBundle } from "./accessbridge";
 import { z } from "zod";
 
 const pointSchema = z.object({ lat: z.number(), lng: z.number() });
@@ -51,6 +53,8 @@ export const appRouter = router({
     geocode: publicProcedure.input(z.object({ query: z.string().min(2) })).mutation(({ input }) => geocodeLocation(input.query)),
     routeDistance: publicProcedure.input(z.object({ from: pointSchema, to: pointSchema })).mutation(({ input }) => routeDistance(input.from, input.to)),
     shelterAvailability: publicProcedure.input(z.object({ name: z.string(), capacity: z.number(), availableSpaces: z.number(), status: z.string() })).query(({ input }) => shelterAvailability(input)),
+    crowdPulse: publicProcedure.query(() => getCrowdPulseBundle()),
+    accessBridge: publicProcedure.query(() => getActionForgeBundle().then(bundle => buildAccessBridgeBundle(bundle.recommendations))),
   }),
 });
 

@@ -6,7 +6,8 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import {
-  ActionPlansPage,
+    ActionPlansPage,
+    AccessBridgePage,
   AlertsPage,
   CitizenIntelligencePage,
   DashboardPage,
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/alerts" component={AlertsPage} />
       <Route path="/risk-map" component={RiskMapPage} />
       <Route path="/action-plans" component={ActionPlansPage} />
+      <Route path="/accessibility" component={AccessBridgePage} />
       <Route path="/evidence" component={EvidencePage} />
       <Route path="/citizen" component={CitizenIntelligencePage} />
       <Route path="/profile" component={ProfilePage} />

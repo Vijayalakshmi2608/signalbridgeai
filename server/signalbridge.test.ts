@@ -5,6 +5,8 @@ import { getSignalSnapshot } from "./db";
 import { DEMO_RAW_ALERT, interpretAlert } from "./signalcore";
 import { buildEvidenceGraph, compileActionPlan } from "./actionforge";
 import { fetchOfficialWarnings, liveIntegrationStatus } from "./liveSources";
+import { buildIncidentClusters, DEMO_CROWD_REPORTS, getCrowdPulseBundle, semanticSimilarity } from "./crowdpulse";
+import { buildAccessBridgeBundle, transformActionPlan } from "./accessbridge";
 import type { TrpcContext } from "./_core/context";
 
 function createPublicContext(): TrpcContext {
@@ -120,5 +122,52 @@ describe("Live source integrations", () => {
     expect(result.warnings).toEqual([]);
     expect(["unconfigured", "rejected", "error", "connected"]).toContain(result.status);
     if (result.status === "unconfigured") expect(result.message).toContain("Demo warnings remain active");
+  });
+});
+
+describe("CrowdPulse", () => {
+  it("groups semantically similar reports using geographic proximity", () => {
+    expect(semanticSimilarity("water near Perambur bus corridor", "floodwater beside Perambur bus corridor")).toBeGreaterThan(20);
+    const clusters = buildIncidentClusters(DEMO_CROWD_REPORTS);
+    const floodCluster = clusters.find(cluster => cluster.title === "Road flooding near Chennai bus corridor");
+    expect(floodCluster?.reportCount).toBe(3);
+    expect(floodCluster?.geographicSpreadKm).toBeGreaterThan(0);
+    expect(floodCluster?.verificationStatus).toBe("CONFLICTING");
+    expect(floodCluster?.isOfficialWarning).toBe(false);
+  });
+
+  it("keeps source fields and explicit non-official safety boundaries", () => {
+    const bundle = getCrowdPulseBundle();
+    expect(bundle.reports.every(report => report.reportText && report.location.lat && report.location.lng && report.timestamp && report.category && report.source && report.verificationStatus)).toBe(true);
+    expect(bundle.disclaimer).toContain("not official warnings");
+    expect(bundle.clusters.every(cluster => cluster.isOfficialWarning === false && cluster.disclaimer.includes("never becomes an official warning"))).toBe(true);
+  });
+
+  it("exposes clustered citizen intelligence through tRPC", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const bundle = await caller.signalbridge.crowdPulse();
+    expect(bundle.clusters.length).toBeGreaterThan(1);
+    expect(bundle.reports).toHaveLength(6);
+  });
+});
+
+describe("AccessBridge", () => {
+  it("keeps the same action count and safety meaning across English, Tamil, and simplified outputs", async () => {
+    const snapshot = await getSignalSnapshot();
+    const bundle = await appRouter.createCaller(createPublicContext()).signalbridge.actionForge({ lat: 13.111, lng: 80.244 });
+    const transformed = transformActionPlan(bundle.recommendations);
+    expect(transformed).toHaveLength(4);
+    expect(transformed[0]?.standardEnglish).toContain("safer elevated location");
+    expect(transformed[0]?.tamil).toContain("பாதுகாப்பான");
+    expect(transformed[0]?.simplifiedEnglish).toContain("higher safe place");
+    expect(transformed.every(action => action.safetyMeaning.includes("same supplied safety meaning"))).toBe(true);
+    expect(snapshot.actionPlans.length).toBeGreaterThan(0);
+  });
+
+  it("returns a browser-native voice boundary instead of inventing a paid voice provider", async () => {
+    const bundle = await appRouter.createCaller(createPublicContext()).signalbridge.accessBridge();
+    expect(bundle.supportedLanguages).toEqual(["English", "Tamil", "Simplified English"]);
+    expect(bundle.voice.provider).toBe("Browser SpeechSynthesis");
+    expect(bundle.disclaimer).toContain("does not create new emergency instructions");
   });
 });
