@@ -5,7 +5,20 @@ import { publicProcedure, router } from "./_core/trpc";
 import { getSignalSnapshot } from "./db";
 import { assessRisk } from "./geoshield";
 import { DEMO_RAW_ALERT, interpretAlert } from "./signalcore";
+import { buildEvidenceGraph, compileActionPlan } from "./actionforge";
+import { fetchOfficialWarnings, geocodeLocation, liveIntegrationStatus, routeDistance, shelterAvailability } from "./liveSources";
 import { z } from "zod";
+
+const pointSchema = z.object({ lat: z.number(), lng: z.number() });
+
+async function getActionForgeBundle(point = { lat: 13.111, lng: 80.244 }) {
+  const snapshot = await getSignalSnapshot();
+  const assessment = assessRisk(point);
+  const warning = snapshot.warnings.find(item => item.status === "active") ?? snapshot.warnings[0];
+  const compiled = compileActionPlan({ warning, affectedZoneRelationship: assessment.affectedZoneRelationship, riskState: assessment.state, profile: snapshot.profile, evidence: snapshot.evidence, communityReports: snapshot.citizenReports });
+  const graph = buildEvidenceGraph({ warning, riskState: assessment.state, affectedZoneRelationship: assessment.affectedZoneRelationship, evidence: snapshot.evidence, communityReports: snapshot.citizenReports, actions: compiled.recommendations });
+  return { ...compiled, assessment, graph, profile: snapshot.profile, warning };
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -28,19 +41,16 @@ export const appRouter = router({
     rawDemoAlert: publicProcedure.query(() => DEMO_RAW_ALERT),
     alertIntelligence: publicProcedure.query(() => interpretAlert(DEMO_RAW_ALERT)),
     interpretAlert: publicProcedure.input(z.object({
-      alertId: z.string().min(1),
-      hazardType: z.string().min(1),
-      severity: z.enum(["advisory", "watch", "warning", "critical"]),
-      source: z.string().min(1),
-      sourceStatus: z.enum(["official", "connected", "simulated"]),
-      affectedArea: z.string().min(1),
-      issueTime: z.string().min(1),
-      validFrom: z.string().min(1),
-      expiryTime: z.string().min(1),
-      warningText: z.string().min(1),
-      recommendedPrecautions: z.string().min(1),
+      alertId: z.string().min(1), hazardType: z.string().min(1), severity: z.enum(["advisory", "watch", "warning", "critical"]), source: z.string().min(1), sourceStatus: z.enum(["official", "connected", "simulated"]), affectedArea: z.string().min(1), issueTime: z.string().min(1), validFrom: z.string().min(1), expiryTime: z.string().min(1), warningText: z.string().min(1), recommendedPrecautions: z.string().min(1),
     })).mutation(({ input }) => interpretAlert(input)),
-    riskAssessment: publicProcedure.input(z.object({ lat: z.number(), lng: z.number() }).optional()).query(({ input }) => assessRisk(input)),
+    riskAssessment: publicProcedure.input(pointSchema.optional()).query(({ input }) => assessRisk(input)),
+    actionForge: publicProcedure.input(pointSchema.optional()).query(({ input }) => getActionForgeBundle(input)),
+    evidenceGraph: publicProcedure.input(pointSchema.optional()).query(({ input }) => getActionForgeBundle(input).then(bundle => bundle.graph)),
+    officialFeed: publicProcedure.query(() => fetchOfficialWarnings()),
+    integrationStatus: publicProcedure.query(() => liveIntegrationStatus()),
+    geocode: publicProcedure.input(z.object({ query: z.string().min(2) })).mutation(({ input }) => geocodeLocation(input.query)),
+    routeDistance: publicProcedure.input(z.object({ from: pointSchema, to: pointSchema })).mutation(({ input }) => routeDistance(input.from, input.to)),
+    shelterAvailability: publicProcedure.input(z.object({ name: z.string(), capacity: z.number(), availableSpaces: z.number(), status: z.string() })).query(({ input }) => shelterAvailability(input)),
   }),
 });
 

@@ -3,6 +3,8 @@ import { assessRisk, pointInPolygon } from "./geoshield";
 import { appRouter } from "./routers";
 import { getSignalSnapshot } from "./db";
 import { DEMO_RAW_ALERT, interpretAlert } from "./signalcore";
+import { buildEvidenceGraph, compileActionPlan } from "./actionforge";
+import { fetchOfficialWarnings, liveIntegrationStatus } from "./liveSources";
 import type { TrpcContext } from "./_core/context";
 
 function createPublicContext(): TrpcContext {
@@ -73,5 +75,50 @@ describe("GeoShield", () => {
     const polygon = [{ lat: 0, lng: 0 }, { lat: 0, lng: 1 }, { lat: 1, lng: 1 }, { lat: 1, lng: 0 }];
     expect(pointInPolygon({ lat: 0.5, lng: 0.5 }, polygon)).toBe(true);
     expect(pointInPolygon({ lat: 2, lng: 2 }, polygon)).toBe(false);
+  });
+});
+
+describe("ActionForge and TrustMesh", () => {
+  it("compiles exactly four traceable action categories from supplied guidance", async () => {
+    const snapshot = await getSignalSnapshot();
+    const assessment = assessRisk({ lat: 13.111, lng: 80.244 });
+    const compiled = compileActionPlan({ warning: snapshot.warnings[0]!, affectedZoneRelationship: assessment.affectedZoneRelationship, riskState: assessment.state, profile: snapshot.profile, evidence: snapshot.evidence, communityReports: snapshot.citizenReports });
+    expect(compiled.recommendations.map(action => action.category)).toEqual(["immediate", "preparation", "avoidance", "escalation"]);
+    expect(compiled.recommendations.every(action => action.action && action.reason && action.supportingEvidence && action.source && action.uncertainty)).toBe(true);
+    expect(compiled.disclaimer).toContain("does not create authoritative");
+  });
+
+  it("keeps conflict visible instead of auto-resolving community evidence", async () => {
+    const snapshot = await getSignalSnapshot();
+    const assessment = assessRisk({ lat: 13.111, lng: 80.244 });
+    const compiled = compileActionPlan({ warning: snapshot.warnings[0]!, affectedZoneRelationship: assessment.affectedZoneRelationship, riskState: assessment.state, profile: snapshot.profile, evidence: snapshot.evidence, communityReports: snapshot.citizenReports });
+    const graph = buildEvidenceGraph({ warning: snapshot.warnings[0]!, riskState: assessment.state, affectedZoneRelationship: assessment.affectedZoneRelationship, evidence: snapshot.evidence, communityReports: snapshot.citizenReports, actions: compiled.recommendations });
+    expect(graph.nodes.some(node => node.category === "conflicting")).toBe(true);
+    expect(graph.disclaimer).toContain("does not automatically choose");
+    expect(graph.nodes.filter(node => node.type === "ACTION RECOMMENDATION")).toHaveLength(4);
+  });
+
+  it("exposes the compiled plan and evidence graph through tRPC", async () => {
+    const caller = appRouter.createCaller(createPublicContext());
+    const plan = await caller.signalbridge.actionForge({ lat: 13.111, lng: 80.244 });
+    const graph = await caller.signalbridge.evidenceGraph({ lat: 13.111, lng: 80.244 });
+    expect(plan.recommendations).toHaveLength(4);
+    expect(graph.links.length).toBeGreaterThan(4);
+  });
+});
+
+describe("Live source integrations", () => {
+  it("reports configured providers and never presents the demo feed as live", () => {
+    const status = liveIntegrationStatus();
+    expect(status.officialWarnings.verification).toMatch(/not configured|allowlisted|rejected/);
+    expect(status.geocoder.provider).toContain("nominatim");
+    expect(status.routing.provider).toContain("router.project-osrm.org");
+  });
+
+  it("fails closed to an explicit unconfigured official feed state", async () => {
+    const result = await fetchOfficialWarnings();
+    expect(result.warnings).toEqual([]);
+    expect(["unconfigured", "rejected", "error", "connected"]).toContain(result.status);
+    if (result.status === "unconfigured") expect(result.message).toContain("Demo warnings remain active");
   });
 });

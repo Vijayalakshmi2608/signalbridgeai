@@ -7,4 +7,10 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  liveWarningFeedUrl: process.env.LIVE_WARNING_FEED_URL ?? "",
+  liveWarningFeedName: process.env.LIVE_WARNING_FEED_NAME ?? "Configured official feed",
+  liveWarningFeedType: process.env.LIVE_WARNING_FEED_TYPE ?? "CAP/RSS",
+  geocoderUrl: process.env.GEOCODER_URL ?? "https://nominatim.openstreetmap.org/search",
+  routerUrl: process.env.ROUTER_URL ?? "https://router.project-osrm.org/route/v1/driving",
+  shelterAvailabilityUrl: process.env.SHELTER_AVAILABILITY_URL ?? "",
 };

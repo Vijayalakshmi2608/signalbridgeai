@@ -108,6 +108,32 @@ export const actionPlans = mysqlTable("action_plans", {
   dueBy: varchar("dueBy", { length: 120 }),
 });
 
+export const actionRecommendations = mysqlTable("action_recommendations", {
+  id: int("id").autoincrement().primaryKey(),
+  category: mysqlEnum("category", ["immediate", "preparation", "avoidance", "escalation"]).notNull(),
+  priority: mysqlEnum("priority", ["now", "next", "ready"]).notNull(),
+  action: text("action").notNull(),
+  reason: text("reason").notNull(),
+  supportingEvidence: text("supportingEvidence").notNull(),
+  source: varchar("source", { length: 180 }).notNull(),
+  evidenceCategory: mysqlEnum("evidenceCategory", ["verified", "supported", "unverified", "conflicting", "unknown"]).notNull(),
+  confidence: int("confidence").notNull(),
+  uncertainty: text("uncertainty").notNull(),
+});
+
+export const evidenceGraphLinks = mysqlTable("evidence_graph_links", {
+  id: int("id").autoincrement().primaryKey(),
+  fromType: varchar("fromType", { length: 80 }).notNull(),
+  fromLabel: varchar("fromLabel", { length: 220 }).notNull(),
+  toType: varchar("toType", { length: 80 }).notNull(),
+  toLabel: varchar("toLabel", { length: 220 }).notNull(),
+  relationship: varchar("relationship", { length: 120 }).notNull(),
+  evidenceCategory: mysqlEnum("evidenceCategory", ["verified", "supported", "unverified", "conflicting", "unknown"]).notNull(),
+  relevance: int("relevance").notNull(),
+  confidence: int("confidence").notNull(),
+  uncertainty: text("uncertainty").notNull(),
+});
+
 export const safetyStatus = mysqlTable("safety_status", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId"),
@@ -123,3 +149,5 @@ export type Warning = typeof warnings.$inferSelect;
 export type EvidenceItem = typeof evidenceItems.$inferSelect;
 export type ActionPlan = typeof actionPlans.$inferSelect;
 export type CitizenReport = typeof citizenReports.$inferSelect;
+export type ActionRecommendation = typeof actionRecommendations.$inferSelect;
+export type EvidenceGraphLink = typeof evidenceGraphLinks.$inferSelect;
