@@ -9,6 +9,7 @@ import { buildIncidentClusters, DEMO_CROWD_REPORTS, getCrowdPulseBundle, semanti
 import { buildAccessBridgeBundle, transformActionPlan } from "./accessbridge";
 import { getSafeLoopState, updateSafeLoopStatus } from "./safeloop";
 import { getResilienceVaultBundle } from "./resiliencevault";
+import { aiHealthCheck, buildAiInsight, validateAiResponse } from "./ai";
 import type { TrpcContext } from "./_core/context";
 
 function createPublicContext(): TrpcContext {
@@ -213,5 +214,46 @@ describe("ResilienceVault", () => {
     const vault = await caller.signalbridge.resilienceVault();
     expect(vault.warning.sourceStatus).toBe("simulated");
     expect(vault.mapInformation.disclaimer).toContain("cached demonstration geometry");
+  });
+});
+
+describe("AI intelligence layer", () => {
+  it("validates strict JSON output and falls back when OpenRouter is unavailable", async () => {
+    const valid = validateAiResponse({
+      risk_status: "WATCH",
+      summary: "Local flooding risk remains elevated.",
+      do_now: ["Move to higher ground if water rises."],
+      prepare_next: ["Keep supplies ready."],
+      avoid: ["Do not enter moving water."],
+      escalation: ["Call emergency services if trapped."],
+      evidence: ["Supplied warning text and local guidance."],
+      uncertainties: ["Water depth cannot be reported in real time."],
+      language: "en",
+      explanation: "Based on supplied warning and guidance.",
+      generated_at: new Date().toISOString(),
+      source_status: "demo",
+    });
+    expect(valid.ok).toBe(true);
+    const fallback = buildAiInsight({
+      warning: "Intense rainfall may create waterlogging on low-lying roads in North Chennai.",
+      hazard: "Urban flooding",
+      severity: "warning",
+      location: "Perambur, Chennai",
+      guidance: ["Avoid underpasses", "Do not drive or walk through moving water"],
+      evidence: ["Supplied warning text and local guidance"],
+      userProfile: { displayName: "Asha" },
+      accessibility: { preferredLanguage: "English" },
+    }, { providerAvailable: false, reason: "OpenRouter unavailable" });
+    expect(fallback.status).toBe("demo");
+    expect(fallback.response.summary).toContain("verified demo guidance");
+    expect(fallback.response.do_now.length).toBeGreaterThan(0);
+    expect(fallback.response.language).toBe("en");
+  });
+
+  it("reports OpenRouter connectivity with a health check", async () => {
+    const health = await aiHealthCheck();
+    expect(health.ok).toBeDefined();
+    expect(health.provider).toBe("openrouter");
+    expect(["ok", "fallback"]).toContain(health.status);
   });
 });

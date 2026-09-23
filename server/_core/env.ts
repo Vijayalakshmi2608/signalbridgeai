@@ -13,4 +13,6 @@ export const ENV = {
   geocoderUrl: process.env.GEOCODER_URL ?? "https://nominatim.openstreetmap.org/search",
   routerUrl: process.env.ROUTER_URL ?? "https://router.project-osrm.org/route/v1/driving",
   shelterAvailabilityUrl: process.env.SHELTER_AVAILABILITY_URL ?? "",
+  openRouterApiKey: process.env.OPENROUTER_API_KEY ?? "",
+  openRouterModel: process.env.OPENROUTER_MODEL ?? "openai/gpt-4o-mini",
 };

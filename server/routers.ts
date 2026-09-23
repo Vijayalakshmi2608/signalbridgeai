@@ -11,6 +11,7 @@ import { getCrowdPulseBundle } from "./crowdpulse";
 import { buildAccessBridgeBundle } from "./accessbridge";
 import { SAFE_LOOP_STATUSES, getSafeLoopState, updateSafeLoopStatus } from "./safeloop";
 import { getResilienceVaultBundle } from "./resiliencevault";
+import { aiHealthCheck, generateAiInsight } from "./ai";
 import { z } from "zod";
 
 const pointSchema = z.object({ lat: z.number(), lng: z.number() });
@@ -22,6 +23,22 @@ async function getActionForgeBundle(point = { lat: 13.111, lng: 80.244 }) {
   const compiled = compileActionPlan({ warning, affectedZoneRelationship: assessment.affectedZoneRelationship, riskState: assessment.state, profile: snapshot.profile, evidence: snapshot.evidence, communityReports: snapshot.citizenReports });
   const graph = buildEvidenceGraph({ warning, riskState: assessment.state, affectedZoneRelationship: assessment.affectedZoneRelationship, evidence: snapshot.evidence, communityReports: snapshot.citizenReports, actions: compiled.recommendations });
   return { ...compiled, assessment, graph, profile: snapshot.profile, warning };
+}
+
+function buildAiContextFromBundle(bundle: Awaited<ReturnType<typeof getActionForgeBundle>>) {
+  return {
+    warning: bundle.warning.warningText,
+    hazard: bundle.warning.hazardType,
+    severity: bundle.warning.severity,
+    location: bundle.warning.area,
+    guidance: bundle.trustedGuidance.slice(0, 6),
+    evidence: bundle.graph.nodes
+      .filter(node => node.type !== "ACTION RECOMMENDATION")
+      .slice(0, 8)
+      .map(node => `${node.type}: ${node.label}`),
+    userProfile: bundle.profile,
+    accessibility: { preferredLanguage: bundle.profile.preferredLanguage, mobilityNeeds: bundle.profile.mobilityNeeds },
+  };
 }
 
 export const appRouter = router({
@@ -50,6 +67,19 @@ export const appRouter = router({
     riskAssessment: publicProcedure.input(pointSchema.optional()).query(({ input }) => assessRisk(input)),
     actionForge: publicProcedure.input(pointSchema.optional()).query(({ input }) => getActionForgeBundle(input)),
     evidenceGraph: publicProcedure.input(pointSchema.optional()).query(({ input }) => getActionForgeBundle(input).then(bundle => bundle.graph)),
+    aiHealth: publicProcedure.query(() => aiHealthCheck()),
+    aiInsight: publicProcedure.input(pointSchema.optional()).query(async ({ input }) => {
+      const bundle = await getActionForgeBundle(input ?? { lat: 13.111, lng: 80.244 });
+      const context = buildAiContextFromBundle(bundle);
+      const result = await generateAiInsight(context);
+      return { ...result, response: result.response };
+    }),
+    regenerateAiInsight: publicProcedure.input(pointSchema.optional()).mutation(async ({ input }) => {
+      const bundle = await getActionForgeBundle(input ?? { lat: 13.111, lng: 80.244 });
+      const context = buildAiContextFromBundle(bundle);
+      const result = await generateAiInsight(context);
+      return result;
+    }),
     officialFeed: publicProcedure.query(() => fetchOfficialWarnings()),
     integrationStatus: publicProcedure.query(() => liveIntegrationStatus()),
     geocode: publicProcedure.input(z.object({ query: z.string().min(2) })).mutation(({ input }) => geocodeLocation(input.query)),
