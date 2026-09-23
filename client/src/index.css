@@ -5,6 +5,7 @@
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-tamil: "Noto Sans Tamil", "IBM Plex Sans", sans-serif;
   --color-background: #f4f7f9;
   --color-foreground: #152536;
   --color-card: #ffffff;
@@ -48,8 +49,17 @@ html { min-width: 320px; background: #f4f7f9; }
 body { margin: 0; min-width: 320px; min-height: 100vh; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { font: inherit; }
-button:active { transform: scale(0.98); }
+button, a { transition: color .16s ease, background-color .16s ease, border-color .16s ease, transform .16s cubic-bezier(.23,1,.32,1); }
+button:active, a:active { transform: scale(0.98); }
 ::selection { background: #bde5e7; color: #0d1b2a; }
+
+.sb-tamil { font-family: var(--font-tamil); letter-spacing: 0; line-height: 1.8; }
+.sb-tabular { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px) {
+  h1 { text-wrap: balance; }
+  .sb-tamil { line-height: 1.9; }
+}
 
 .sb-grid {
   background-image: linear-gradient(rgba(13, 52, 72, 0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(13, 52, 72, 0.045) 1px, transparent 1px);

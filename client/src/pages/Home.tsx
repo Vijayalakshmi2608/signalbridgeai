@@ -17,6 +17,7 @@ const modules = [
   ["04", "ActionForge", "Emergency action compilation"],
   ["05", "AccessBridge", "Multilingual and accessible delivery"],
   ["06", "SafeLoop", "Safety status and response loop"],
+  ["07", "ResilienceVault", "Offline emergency continuity"],
 ];
 
 export default function Home() {
@@ -56,7 +57,7 @@ export default function Home() {
             <div className="my-10 grid grid-cols-2 gap-3">
               <div className="rounded-xl border border-[#284b5b] bg-[#122b3b] p-4"><RadioTower size={19} className="text-[#7ee2de]" /><div className="mt-7 font-mono text-3xl font-semibold">02</div><div className="mt-1 text-xs text-[#9cb5bf]">active warnings</div></div>
               <div className="rounded-xl border border-[#284b5b] bg-[#122b3b] p-4"><Waves size={19} className="text-[#f6c45c]" /><div className="mt-7 font-mono text-3xl font-semibold">HIGH</div><div className="mt-1 text-xs text-[#9cb5bf]">localized risk state</div></div>
-              <div className="col-span-2 rounded-xl border border-[#284b5b] bg-[#122b3b] p-4"><div className="flex items-center justify-between text-xs text-[#9cb5bf]"><span>Signal → action coverage</span><span className="font-mono text-[#b8eeee]">4 / 6 modules ready</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-[#274657]"><div className="h-full w-[66%] rounded-full bg-[#7ee2de]" /></div></div>
+              <div className="col-span-2 rounded-xl border border-[#284b5b] bg-[#122b3b] p-4"><div className="flex items-center justify-between text-xs text-[#9cb5bf]"><span>Signal → action coverage</span><span className="font-mono text-[#b8eeee]">7 / 7 modules ready</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-[#274657]"><div className="h-full w-full rounded-full bg-[#7ee2de]" /></div></div>
             </div>
             <div className="flex items-center gap-3 border-t border-[#284b5b] pt-5 text-sm text-[#bdd0d7]"><ShieldCheck size={17} className="text-[#7ee2de]" /><span>Not a replacement for official warning systems.</span></div>
           </div>
