@@ -168,24 +168,6 @@ SignalBridge complements existing emergency warning infrastructure by focusing o
 | 9 | Simulate connectivity loss (**ResilienceVault**) | Essentials remain available and are labelled as cached. |
 | 10 | Update the **SafeLoop** state | The loop closes: guidance → user response → recorded state. |
 
----
-
-## 📸 Product Screenshots
-
-<!-- VERIFY: capture real screenshots from the running app, save to docs/assets/, then replace each placeholder row with:
-     <img src="docs/assets/FILENAME.png" alt="..." width="420"> -->
-
-| Screen | File to add |
-|---|---|
-| Main dashboard | `docs/assets/signalbridge-dashboard.png` |
-| SignalCore — Chennai flood warning | `docs/assets/signalcore-warning.png` |
-| GeoShield — geographic risk view | `docs/assets/geoshield-risk.png` |
-| TrustMesh — evidence interface | `docs/assets/trustmesh-evidence.png` |
-| ActionForge — action plan | `docs/assets/actionforge-plan.png` |
-| CrowdPulse — citizen intelligence | `docs/assets/crowdpulse-reports.png` |
-| AccessBridge — Tamil / accessibility | `docs/assets/accessbridge-tamil.png` |
-| SafeLoop — safety state | `docs/assets/safeloop-status.png` |
-| ResilienceVault — offline mode | `docs/assets/resiliencevault-offline.png` |
 
 ---
 
