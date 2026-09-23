@@ -420,16 +420,6 @@ Authoritative-source priority · evidence-linked recommendations · uncertainty 
 
 ---
 
-## 💡 Why This Project Matters
-
-**Problem** → warnings exist, but acting on them takes interpretation
-**→ Interpretation gap** → location, trust, priority, language, connectivity
-**→ AI intelligence** → structured, evidence-linked, validated guidance
-**→ Human-centered action** → prioritized plans and safety-state feedback
-**→ Accessibility** → English/Tamil and readable presentation
-**→ Resilience** → essentials available offline
----
-
 ## 🙏 Acknowledgements
 
 React, TypeScript, Vite, Wouter, Tailwind CSS, Node.js, Express, tRPC, SQLite, Zod, OpenRouter, Leaflet and OpenStreetMap.
