@@ -15,7 +15,7 @@
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)
 ![OpenRouter](https://img.shields.io/badge/AI-OpenRouter-6467F2)
 ![Leaflet](https://img.shields.io/badge/Maps-Leaflet-199900?logo=leaflet&logoColor=white)
-![License](https://img.shields.io/badge/License-not%20yet%20specified-lightgrey)
+
 
 > **SignalBridge complements official emergency warning systems; it does not replace them.**
 
@@ -45,7 +45,15 @@ WARNING → EVIDENCE → RISK → ACTION → ACCESSIBILITY → SAFETY
 
 ## 📑 Contents
 
-[Why SignalBridge](#-why-signalbridge) · [Modules](#-the-eight-modules) · [Demo](#-working-prototype--chennai-flood-simulation) · [Screenshots](#-product-screenshots) · [Architecture](#-architecture) · [AI](#-ai--intelligence-architecture) · [Responsible AI](#-safety-trust--responsible-ai) · [Setup](#-setup) · [Testing](#-testing) · [Demo vs Production](#-demo-vs-production-boundary) · [Limitations](#-current-limitations) · [Roadmap](#-roadmap)
+[Why SignalBridge](#-why-signalbridge) 
+· [Modules](#-the-eight-modules) 
+· [Demo](#-working-prototype--chennai-flood-simulation)
+· [Architecture](#-architecture) ·
+[AI](#-ai--intelligence-architecture)
+· [Responsible AI](#-safety-trust--responsible-ai) 
+· [Setup](#-setup) 
+· [Testing](#-testing) 
+· [Limitations](#-current-limitations) · [Roadmap](#-roadmap)
 
 ---
 
@@ -231,7 +239,6 @@ The client never talks to the AI provider. All AI calls happen server-side.
 | Maps | Leaflet, OpenStreetMap |
 | Package manager | pnpm |
 
-<!-- VERIFY: confirm every row against package.json -->
 
 ---
 
@@ -285,8 +292,6 @@ cp .env.example .env      # then add your own values
 pnpm dev
 ```
 
-<!-- VERIFY: confirm .env.example exists; otherwise create .env manually -->
-
 ### Environment variables
 
 | Variable | Purpose | Required |
@@ -296,7 +301,7 @@ pnpm dev
 | `PORT` | Server port | No |
 | `NODE_ENV` | Runtime environment | No |
 
-<!-- VERIFY: remove variables that don't exist in the code; add any that do (e.g. database path) -->
+
 
 Use placeholders only. **Never commit real keys.**
 
@@ -325,17 +330,6 @@ pnpm check                                # TypeScript type-check
 
 ---
 
-## 🔌 Backend API
-
-The backend exposes its functionality through **tRPC** procedures on an Express server. Inputs are validated with Zod, and AI-backed procedures call OpenRouter server-side.
-
-
-## 🗄️ Data model
-
-Data is persisted in **SQLite**.
-
-
----
 
 ## 🗂️ Project structure
 
@@ -443,29 +437,8 @@ React, TypeScript, Vite, Wouter, Tailwind CSS, Node.js, Express, tRPC, SQLite, Z
 ---
 
 <details>
-<summary><b>📋 Project descriptions (50 / 100 / 250 / 500 words)</b></summary>
 
-### 50 words (GitHub description)
-
-SignalBridge is an AI-powered Emergency Intelligence and Action Platform. It turns trusted emergency warnings into location-aware, evidence-linked, multilingual and accessible action guidance, tracks each user's safety state, and keeps essential information available offline. The prototype demonstrates a controlled Chennai flood simulation and complements, never replaces, official warning systems.
-
-### 100 words
-
-SignalBridge is an AI-powered Emergency Intelligence and Action Platform that sits between a trusted emergency warning and a person's next action. It interprets warnings into structured intelligence, determines location relevance, links recommendations to evidence and uncertainty, and compiles prioritized action plans for each person using validated AI output. Guidance is delivered in English and Tamil with accessible presentation, community reports are handled separately from official information, and essential information stays available offline when connectivity fails. A response-state workflow records what happens next. The prototype demonstrates a controlled Chennai flood simulation. SignalBridge complements official emergency warning systems and does not replace them.
-
-### 250 words
-
-SignalBridge is an AI-powered Emergency Intelligence and Action Platform. Emergency warnings carry vital hazard information, but people still need to work out whether a warning affects their location, what to do first, which information is authoritative, what remains uncertain, and how to access guidance in their language and format, including when connectivity fails. SignalBridge addresses this interpretation gap without creating another warning channel.
-
-The platform is organised into eight modules. SignalCore interprets warnings into structured fields. GeoShield determines geographic relevance. TrustMesh links recommendations to evidence and makes uncertainty visible. ActionForge compiles prioritized actions, covering immediate steps, preparation, things to avoid and escalation guidance. CrowdPulse processes community reports and groups related incidents while keeping them clearly separate from official warnings. AccessBridge delivers guidance in English and Tamil with accessible presentation. SafeLoop records a person's response state after they receive a plan. ResilienceVault keeps essential information available offline, labelled as cached.
-
-Every recommendation is designed to be explainable, so people see the evidence and uncertainty behind guidance rather than a bare instruction.
-
-Built with React, TypeScript, Vite, Express, tRPC and SQLite, SignalBridge calls AI models through OpenRouter on the server only, requests structured JSON output, and validates every response with Zod. If the provider is unavailable, the system degrades safely.
-
-The current prototype demonstrates a controlled Chennai flood simulation. It does not detect or predict real floods, issue evacuation orders or dispatch responders. AI guidance is decision support and never overrides official emergency instructions. SignalBridge complements official emergency warning infrastructure by focusing on the actionability and personalization layer.
-
-### 500 words
+<b>Summary</b>
 
 SignalBridge is an AI-powered Emergency Intelligence and Action Platform that transforms trusted emergency warnings into personalized, evidence-linked and accessible action guidance. Its tagline describes the pipeline: from warning to evidence, from evidence to action, from action to safety.
 
